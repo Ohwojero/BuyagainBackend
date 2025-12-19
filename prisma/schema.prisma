@@ -1,0 +1,298 @@
+// Prisma schema for BuyAgain.ng loyalty management system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+enum UserRole {
+  MERCHANT
+  ADMIN
+  STAFF
+  VIEWER
+}
+
+enum CouponType {
+  DISCOUNT
+  REFERRAL
+}
+
+enum CouponStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  DELETED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum SubscriptionPlan {
+  FREE
+  GROWTH
+  SCALE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+enum RedemptionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  REDEEM
+  GENERATE
+}
+
+// Merchants - Business accounts
+model Merchant {
+  id                String   @id @default(cuid())
+  businessName      String
+  email             String   @unique
+  phone             String?
+  businessType      String?
+  address           String?
+  logo              String?
+  tier              SubscriptionPlan @default(FREE)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  users             User[]
+  coupons           Coupon[]
+  redemptions       Redemption[]
+  referrals         Referral[]
+  customers         Customer[]
+  subscriptions     Subscription[]
+  teamMembers       TeamMember[]
+  whatsappMessages  WhatsAppMessage[]
+  auditLogs         AuditLog[]
+
+  @@map("merchants")
+}
+
+// Users - Auth users (linked to merchants/team members)
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  role        UserRole @default(MERCHANT)
+  isActive    Boolean  @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("users")
+}
+
+// Coupons - Discount and referral codes
+model Coupon {
+  id              String        @id @default(cuid())
+  code            String        @unique
+  type            CouponType
+  status          CouponStatus  @default(ACTIVE)
+  value           Float
+  valueType       DiscountType
+  quantity        Int           @default(1)
+  usedCount       Int           @default(0)
+  expiryDate      DateTime?
+  title           String?
+  description     String?
+  terms           String?
+  qrUrl           String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  merchantId      String
+  merchant        Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  redemptions     Redemption[]
+
+  @@map("coupons")
+}
+
+// Redemptions - Redemption events
+model Redemption {
+  id              String           @id @default(cuid())
+  status          RedemptionStatus @default(PENDING)
+  discountAmount  Float?
+  customerName    String?
+  customerPhone   String?
+  location        String?
+  redeemedAt      DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  merchantId      String
+  merchant        Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  couponId        String
+  coupon          Coupon           @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@map("redemptions")
+}
+
+// Referrals - Referral tracking
+model Referral {
+  id              String   @id @default(cuid())
+  referrerName    String
+  referrerPhone   String
+  referredName    String?
+  referredPhone   String?
+  rewardAmount    Float    @default(0)
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  merchantId      String
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("referrals")
+}
+
+// Subscriptions - Payment and plan info
+model Subscription {
+  id              String             @id @default(cuid())
+  plan            SubscriptionPlan
+  status          SubscriptionStatus @default(ACTIVE)
+  paystackRef     String?
+  amount          Float
+  currency        String             @default("NGN")
+  startDate       DateTime           @default(now())
+  endDate         DateTime?
+  autoRenew       Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  merchantId      String
+  merchant        Merchant           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// Team Members - Multi-user access
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  role        UserRole @default(STAFF)
+  isActive    Boolean  @default(true)
+  invitedAt   DateTime @default(now())
+  joinedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchantId  String
+  merchant    Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+}
+
+// Customers - Customer profiles
+model Customer {
+  id              String   @id @default(cuid())
+  name            String
+  phone           String
+  email           String?
+  totalRedemptions Int      @default(0)
+  totalSpent      Float    @default(0)
+  lastVisit       DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  merchantId      String
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("customers")
+}
+
+// WhatsApp Messages - Message logs
+model WhatsAppMessage {
+  id          String         @id @default(cuid())
+  messageId   String?
+  phone       String
+  message     String
+  type        String         // welcome, discount, reminder, referral
+  status      MessageStatus  @default(SENT)
+  sentAt      DateTime       @default(now())
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  merchantId  String
+  merchant    Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_messages")
+}
+
+// Audit Logs - System activity tracking
+model AuditLog {
+  id          String       @id @default(cuid())
+  action      AuditAction
+  entityType  String       // merchant, coupon, redemption, etc.
+  entityId    String
+  oldValues   Json?
+  newValues   Json?
+  userId      String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime     @default(now())
+
+  // Relations
+  merchantId  String
+  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+// Analytics Cache - Pre-computed analytics
+model AnalyticsCache {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  data            Json
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("analytics_cache")
+}
