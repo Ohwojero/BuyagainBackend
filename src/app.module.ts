@@ -13,7 +13,7 @@ import { CustomersModule } from './customers/customers.module';
 import { AuditlogsModule } from './auditlogs/auditlogs.module';
 import { TeammembersModule } from './teammembers/teammembers.module';
 import { AdminModule } from './admin/admin.module';
-
+import { MerchantsModule } from './merchants/merchants.module';
 
 @Module({
   imports: [
@@ -29,7 +29,8 @@ import { AdminModule } from './admin/admin.module';
     CustomersModule,
     AuditlogsModule,
     TeammembersModule,
-    AdminModule
+    AdminModule,
+    MerchantsModule
   ],
   controllers: [AppController],
   providers: [AppService],

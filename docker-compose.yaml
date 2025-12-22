@@ -3,9 +3,9 @@ services:
   dev-db:
     image: postgres:13
     environment:
-      # POSTGRES_USER: postgres
-      # POSTGRES_PASSWORD: 121212
-      # POSTGRES_DB: devdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 121212
+      POSTGRES_DB: devdb
       DATABASE_URL: ${DATABASE_URL}
     ports:
       - "5432:5432"

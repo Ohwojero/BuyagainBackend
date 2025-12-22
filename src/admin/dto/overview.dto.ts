@@ -13,6 +13,9 @@ export class OverviewDto {
   @ApiProperty()
   totalRedemptions: number;
 
+  @ApiProperty()
+  totalCodesGenerated: number;
+
   @ApiProperty({ type: [Object] })
   recentMerchants: any[];
 

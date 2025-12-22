@@ -42,6 +42,9 @@ export class AdminService {
       },
     });
 
+    // Get total codes generated
+    const totalCodesGenerated = await this.prisma.coupon.count();
+
     const totalMerchantsCount = totalMerchants;
     const planStats = planDistribution.map(item => ({
       plan: item.tier,
@@ -54,6 +57,7 @@ export class AdminService {
       activeMerchants,
       totalRevenue,
       totalRedemptions,
+      totalCodesGenerated,
       recentMerchants: recentMerchants.map(m => ({
         id: m.id,
         name: m.businessName,
