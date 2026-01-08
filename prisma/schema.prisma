@@ -131,6 +131,8 @@ model Coupon {
   description     String?
   terms           String?
   qrUrl           String?
+  referrerName    String?
+  referrerPhone   String?
   isActive        Boolean       @default(true)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

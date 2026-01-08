@@ -35,4 +35,12 @@ export class GenerateCouponDto {
   @IsOptional()
   @IsString()
   terms?: string;
+
+  @IsOptional()
+  @IsString()
+  referrerName?: string;
+
+  @IsOptional()
+  @IsString()
+  referrerPhone?: string;
 }

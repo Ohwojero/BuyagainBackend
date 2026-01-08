@@ -22,7 +22,7 @@ export class CouponsService {
 
     for (let i = 0; i < dto.quantity; i++) {
       // Generate unique code
-      const code = this.generateUniqueCode();
+      const code = await this.generateUniqueCode();
 
       // Generate QR code URL (placeholder for now)
       const qrUrl = `https://buyagain.ng/redeem/${code}`;
@@ -35,14 +35,28 @@ export class CouponsService {
           value: dto.value,
           valueType: dto.valueType,
           quantity: 1, // Each code is unique
-          expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+          expiryDate: dto.expiryDate ? new Date(dto.expiryDate + 'T23:59:59.999Z') : null,
           title: dto.title,
           description: dto.description,
           terms: dto.terms,
           qrUrl,
+          referrerName: dto.referrerName,
+          referrerPhone: dto.referrerPhone,
           merchantId,
         },
       });
+
+      // If this is a referral coupon, create a referral record
+      if (dto.type === 'REFERRAL' && dto.referrerName && dto.referrerPhone) {
+        await this.prisma.referral.create({
+          data: {
+            merchantId,
+            referrerName: dto.referrerName,
+            referrerPhone: dto.referrerPhone,
+            rewardAmount: dto.value, // Use the coupon value as reward amount
+          },
+        });
+      }
 
       coupons.push(coupon);
     }
@@ -53,13 +67,69 @@ export class CouponsService {
     };
   }
 
-  private generateUniqueCode(): string {
+  async findAll(merchantId: string) {
+    return this.prisma.coupon.findMany({
+      where: { merchantId },
+    });
+  }
+
+  async findOne(id: string, merchantId: string) {
+    const coupon = await this.prisma.coupon.findFirst({
+      where: { id, merchantId },
+    });
+    if (!coupon) {
+      throw new Error('Coupon not found');
+    }
+    return coupon;
+  }
+
+  async update(id: string, updateData: any, merchantId: string) {
+    const coupon = await this.prisma.coupon.findFirst({
+      where: { id, merchantId },
+    });
+    if (!coupon) {
+      throw new Error('Coupon not found');
+    }
+    return this.prisma.coupon.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  async remove(id: string, merchantId: string) {
+    const coupon = await this.prisma.coupon.findFirst({
+      where: { id, merchantId },
+    });
+    if (!coupon) {
+      throw new Error('Coupon not found');
+    }
+    return this.prisma.coupon.delete({
+      where: { id },
+    });
+  }
+
+  private async generateUniqueCode(): Promise<string> {
     // Generate a unique 8-character alphanumeric code
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    let isUnique = false;
+
+    while (!isUnique) {
+      code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      // Check if code already exists
+      const existingCoupon = await this.prisma.coupon.findUnique({
+        where: { code },
+      });
+
+      if (!existingCoupon) {
+        isUnique = true;
+      }
     }
+
     return code;
   }
 }

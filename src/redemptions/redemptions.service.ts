@@ -53,6 +53,20 @@ export class RedemptionsService {
       data: { usedCount: { increment: 1 } },
     });
 
+    // If this is a referral coupon, create a referral record
+    if (coupon.type === 'REFERRAL' && coupon.referrerName && coupon.referrerPhone) {
+      await this.prisma.referral.create({
+        data: {
+          merchantId,
+          referrerName: coupon.referrerName,
+          referrerPhone: coupon.referrerPhone,
+          referredName: customerName,
+          referredPhone: customerPhone,
+          rewardAmount: coupon.value, // Use the coupon value as reward amount
+        },
+      });
+    }
+
     return {
       message: 'Coupon redeemed successfully',
       redemption,
