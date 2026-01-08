@@ -77,4 +77,36 @@ export class AnalyticsService {
       })),
     };
   }
+
+  async getRedemptionTrends(merchantId: string) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const redemptions = await this.prisma.redemption.findMany({
+      where: {
+        merchantId,
+        createdAt: {
+          gte: thirtyDaysAgo,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
+    });
+
+    // Group by date
+    const trends = redemptions.reduce((acc, redemption) => {
+      const date = redemption.createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date]++;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Convert to array and sort
+    return Object.entries(trends)
+      .map(([date, redemptions]) => ({ date, redemptions }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
 }

@@ -11,4 +11,10 @@ export class AnalyticsController {
   async getAnalytics(@Request() req) {
     return this.analyticsService.getAnalytics(req.user.merchantId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('redemption-trends')
+  async getRedemptionTrends(@Request() req) {
+    return this.analyticsService.getRedemptionTrends(req.user.merchantId);
+  }
 }
