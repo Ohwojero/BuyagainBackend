@@ -5,12 +5,13 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
-
+import { EmailModule } from '../email/email.module';
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({ secret: 'your-secret-key' }),
     PrismaModule,
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

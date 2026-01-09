@@ -100,14 +100,15 @@ model Merchant {
 
 // Users - Auth users (linked to merchants/team members)
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  password    String
-  role        UserRole @default(MERCHANT)
-  isActive    Boolean  @default(true)
-  lastLogin   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  role          UserRole @default(MERCHANT)
+  isActive      Boolean  @default(true)
+  emailVerified Boolean  @default(false)
+  lastLogin     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   merchantId String

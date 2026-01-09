@@ -29,4 +29,9 @@ export class AuthController {
   async logout(@Request() req) {
     return this.authService.logout(req.user.id);
   }
+
+  @Post('verify-email')
+  async verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
 }
