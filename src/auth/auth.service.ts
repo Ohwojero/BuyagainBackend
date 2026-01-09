@@ -1,9 +1,10 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -147,6 +148,41 @@ export class AuthService {
     } catch (error) {
       throw new BadRequestException('Invalid or expired verification token');
     }
+  }
+
+  async resendVerificationEmail(resendDto: ResendVerificationDto) {
+    const { email } = resendDto;
+
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if email is already verified
+    if (user.emailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Generate new verification token
+    const verificationToken = this.jwtService.sign(
+      { email: user.email, sub: user.id },
+      { expiresIn: '24h' }
+    );
+
+    // Send verification email
+    try {
+      await this.emailService.sendVerificationEmail(user.email, verificationToken);
+      console.log(`Verification email resent successfully to ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to resend verification email:', emailError);
+      throw new BadRequestException('Failed to send verification email. Please try again later.');
+    }
+
+    return { message: 'Verification email sent successfully. Please check your email.' };
   }
 
   async getProfile(userId: string) {
