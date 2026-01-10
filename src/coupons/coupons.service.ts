@@ -48,8 +48,10 @@ export class CouponsService {
 
       // If this is a referral coupon, create a referral record
       if (dto.type === 'REFERRAL' && dto.referrerName && dto.referrerPhone) {
+        const referralCode = await this.generateUniqueCode();
         await this.prisma.referral.create({
           data: {
+            code: referralCode,
             merchantId,
             referrerName: dto.referrerName,
             referrerPhone: dto.referrerPhone,

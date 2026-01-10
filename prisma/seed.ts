@@ -3,6 +3,31 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+async function generateUniqueCode(): Promise<string> {
+  // Generate a unique 8-character alphanumeric code
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  let isUnique = false;
+
+  while (!isUnique) {
+    code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    // Check if code already exists
+    const existingReferral = await prisma.referral.findUnique({
+      where: { code },
+    });
+
+    if (!existingReferral) {
+      isUnique = true;
+    }
+  }
+
+  return code;
+}
+
 async function main() {
   // Create a sample merchant
   const merchant = await prisma.merchant.upsert({
@@ -79,28 +104,36 @@ async function main() {
   });
 
   // Create sample referrals
-  await prisma.referral.createMany({
-    data: [
-      {
-        referrerName: 'Alice',
-        referrerPhone: '+1111111111',
-        referredName: 'Bob',
-        referredPhone: '+2222222222',
-        rewardAmount: 5,
-        isCompleted: true,
-        merchantId: merchant.id,
+  const referralData = [
+    {
+      referrerName: 'Alice',
+      referrerPhone: '+1111111111',
+      referredName: 'Bob',
+      referredPhone: '+2222222222',
+      rewardAmount: 5,
+      isCompleted: true,
+      merchantId: merchant.id,
+    },
+    {
+      referrerName: 'Charlie',
+      referrerPhone: '+3333333333',
+      referredName: 'David',
+      referredPhone: '+4444444444',
+      rewardAmount: 10,
+      isCompleted: false,
+      merchantId: merchant.id,
+    },
+  ];
+
+  for (const data of referralData) {
+    const code = await generateUniqueCode();
+    await prisma.referral.create({
+      data: {
+        ...data,
+        code,
       },
-      {
-        referrerName: 'Charlie',
-        referrerPhone: '+3333333333',
-        referredName: 'David',
-        referredPhone: '+4444444444',
-        rewardAmount: 10,
-        isCompleted: false,
-        merchantId: merchant.id,
-      },
-    ],
-  });
+    });
+  }
 
   console.log('Database seeded successfully');
 }

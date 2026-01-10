@@ -175,6 +175,7 @@ model Redemption {
 // Referrals - Referral tracking
 model Referral {
   id              String   @id @default(cuid())
+  code            String   @unique
   referrerName    String
   referrerPhone   String
   referredName    String?

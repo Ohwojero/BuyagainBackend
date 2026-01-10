@@ -55,8 +55,10 @@ export class RedemptionsService {
 
     // If this is a referral coupon, create a referral record
     if (coupon.type === 'REFERRAL' && coupon.referrerName && coupon.referrerPhone) {
+      const referralCode = await this.generateUniqueCode();
       await this.prisma.referral.create({
         data: {
+          code: referralCode,
           merchantId,
           referrerName: coupon.referrerName,
           referrerPhone: coupon.referrerPhone,
@@ -94,5 +96,30 @@ export class RedemptionsService {
       },
       orderBy: { redeemedAt: 'desc' },
     });
+  }
+
+  private async generateUniqueCode(): Promise<string> {
+    // Generate a unique 8-character alphanumeric code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    let isUnique = false;
+
+    while (!isUnique) {
+      code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      // Check if code already exists
+      const existingReferral = await this.prisma.referral.findUnique({
+        where: { code },
+      });
+
+      if (!existingReferral) {
+        isUnique = true;
+      }
+    }
+
+    return code;
   }
 }
