@@ -5,6 +5,7 @@ import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -200,6 +201,33 @@ export class AuthService {
     return {
       user: userWithoutPassword,
       merchant: user.merchant,
+    };
+  }
+
+  async updatePreferences(userId: string, preferences: UpdatePreferencesDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailNotifications: preferences.emailNotifications,
+        redemptionAlerts: preferences.redemptionAlerts,
+        usageWarnings: preferences.usageWarnings,
+        whatsappNotifications: preferences.whatsappNotifications,
+      },
+    });
+
+    // Return updated user without password
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    return {
+      message: 'Preferences updated successfully',
+      user: userWithoutPassword,
     };
   }
 }

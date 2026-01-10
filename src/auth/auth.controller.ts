@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
@@ -39,5 +40,11 @@ export class AuthController {
   @Post('resend-verification')
   async resendVerification(@Body() resendDto: ResendVerificationDto) {
     return this.authService.resendVerificationEmail(resendDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('preferences')
+  async updatePreferences(@Body() updatePreferencesDto: UpdatePreferencesDto, @Request() req) {
+    return this.authService.updatePreferences(req.user.id, updatePreferencesDto);
   }
 }
