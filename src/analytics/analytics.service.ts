@@ -23,15 +23,27 @@ export class AnalyticsService {
       _sum: { discountAmount: true },
     });
 
-    // Get returning customers (customers with more than 1 redemption)
-    const returningCustomers = await this.prisma.customer.count({
+    // Get returning customers (unique customers with more than 1 redemption)
+    const returningCustomersResult = await this.prisma.redemption.groupBy({
+      by: ['customerPhone'],
       where: {
         merchantId,
-        totalRedemptions: {
-          gt: 1,
+        customerPhone: {
+          not: null,
+        },
+      },
+      _count: {
+        id: true,
+      },
+      having: {
+        id: {
+          _count: {
+            gt: 1,
+          },
         },
       },
     });
+    const returningCustomers = returningCustomersResult.length;
 
     // Get top customers by redemption count
     const topCustomers = await this.prisma.customer.findMany({

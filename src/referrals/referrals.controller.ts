@@ -23,4 +23,9 @@ export class ReferralsController {
   async getReferralByCode(@Param('code') code: string) {
     return this.referralsService.getReferralByCode(code);
   }
+
+  @Post('code/:code/redeem')
+  async redeemReferral(@Param('code') code: string, @Body() body: { referredName: string; referredPhone: string }) {
+    return this.referralsService.redeemReferral(code, body.referredName, body.referredPhone);
+  }
 }

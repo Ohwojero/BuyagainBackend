@@ -1,11 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { AppModule } from './src/app.module';
+import { GlobalExceptionFilter } from './src/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(new ValidationPipe());
+
+  // Global exception filter for JSON responses
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Enable CORS
   app.enableCors({
@@ -19,7 +23,7 @@ async function bootstrap() {
   });
 
   // ✅ Railway injects PORT automatically
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT) || 3001;
   await app.listen(port);
 
   console.log(`Backend server running on port ${port}`);

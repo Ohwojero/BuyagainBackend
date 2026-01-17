@@ -1,7 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:121212@localhost:5432/devdb';
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ adapter });
 
 async function generateUniqueCode(): Promise<string> {
   // Generate a unique 8-character alphanumeric code
@@ -134,6 +140,20 @@ async function main() {
       },
     });
   }
+
+  // Add specific referral code PTZO60LX for testing
+  await prisma.referral.create({
+    data: {
+      code: 'PTZO60LX',
+      referrerName: 'Test Referrer',
+      referrerPhone: '+5555555555',
+      referredName: null,
+      referredPhone: null,
+      rewardAmount: 5,
+      isCompleted: false,
+      merchantId: merchant.id,
+    },
+  });
 
   console.log('Database seeded successfully');
 }
